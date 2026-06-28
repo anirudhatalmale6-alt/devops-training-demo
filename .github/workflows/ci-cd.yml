@@ -10,15 +10,41 @@ jobs:
 
   # ============================================
   # STAGE 1: CONTINUOUS INTEGRATION (CI)
-  # Automatically test code on every push
+  # Automatically check and validate on every push
   # ============================================
   test:
-    name: Run Tests (CI)
+    name: Run Checks (CI)
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Check Team Messages File Exists
+        run: |
+          echo "Checking that team_messages.txt exists..."
+          if [ -f "team_messages.txt" ]; then
+            echo "SUCCESS: team_messages.txt found!"
+          else
+            echo "ERROR: team_messages.txt is missing!"
+            exit 1
+          fi
+
+      - name: Count Team Messages
+        run: |
+          echo "=========================================="
+          echo "  TEAM MESSAGE BOARD STATUS"
+          echo "=========================================="
+          echo ""
+          LINES=$(grep -c ":" team_messages.txt || true)
+          echo "Total messages found: $LINES"
+          echo ""
+          echo "Current messages:"
+          echo "------------------------------------------"
+          cat team_messages.txt
+          echo "------------------------------------------"
+          echo ""
+          echo "ALL CHECKS PASSED!"
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -36,7 +62,7 @@ jobs:
 
   # ============================================
   # STAGE 2: BUILD & CREATE ARTIFACT
-  # Package the application as a deployable artifact
+  # Package the project as a deployable artifact
   # ============================================
   build:
     name: Build & Package (CD)
@@ -47,23 +73,20 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Create Build Directory
+      - name: Create Build Package
         run: |
           mkdir -p build
           cp app.py build/
+          cp team_messages.txt build/
           cp requirements.txt build/
           echo "Build Date: $(date)" > build/BUILD_INFO.txt
           echo "Commit: ${{ github.sha }}" >> build/BUILD_INFO.txt
+          echo "Built by: GitHub Actions CI/CD Pipeline" >> build/BUILD_INFO.txt
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: calculator-app-build
+          name: project-build
           path: build/
 
   # ============================================
@@ -80,7 +103,7 @@ jobs:
       - name: Download Artifact
         uses: actions/download-artifact@v4
         with:
-          name: calculator-app-build
+          name: project-build
           path: deploy/
 
       - name: Simulate Deployment
@@ -95,8 +118,8 @@ jobs:
           echo "Build Info:"
           cat deploy/BUILD_INFO.txt
           echo ""
-          echo "Running application to verify:"
-          cd deploy && python app.py
+          echo "Team Messages:"
+          cat deploy/team_messages.txt
           echo ""
           echo "=========================================="
           echo "  DEPLOYMENT SUCCESSFUL!"

@@ -1,0 +1,13 @@
+==========================================
+  TEAM MESSAGE BOARD - DevOps Training
+==========================================
+
+Welcome! Add your name and a message below.
+Each time you add a message, the CI/CD pipeline
+will run automatically!
+
+------------------------------------------
+
+Trainer: Hello everyone! This is the first message on our DevOps project.
+
+------------------------------------------
